@@ -53,6 +53,7 @@ class Button:
             types.KeyboardButtonCallback,
             types.KeyboardButtonGame,
             types.KeyboardButtonSwitchInline,
+            types.KeyboardButtonUserProfile,
             types.KeyboardButtonUrl,
             types.InputKeyboardButtonUrlAuth
         ))
@@ -163,6 +164,12 @@ class Button:
             bot=utils.get_input_user(bot or types.InputUserSelf()),
             request_write_access=write_access,
             fwd_text=fwd_text
+        )
+    @staticmethod
+    def mention(text, input_entity):
+        return types.InputKeyboardButtonUserProfile(
+            text,
+            utils.get_input_user(input_entity or types.InputUserSelf())
         )
 
     @classmethod

@@ -104,7 +104,7 @@ class InlineResult:
 
     async def click(self, entity=None, reply_to=None, comment_to=None,
                     silent=False, clear_draft=False, hide_via=False,
-                    background=None):
+                    background=None, send_as=None):
         """
         Clicks this result and sends the associated `message`.
 
@@ -158,7 +158,8 @@ class InlineResult:
             background=background,
             clear_draft=clear_draft,
             hide_via=hide_via,
-            reply_to_msg_id=reply_id
+            send_as=send_as,
+            reply_to_msg_id=reply_id,
         )
         return self._client._get_response_message(
             req, await self._client(req), entity)

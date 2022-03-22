@@ -86,7 +86,7 @@ class Dialog:
 
         self.unread_count = dialog.unread_count
         self.unread_mentions_count = dialog.unread_mentions_count
-
+        self.unread_reactions_count = dialog.unread_reactions_count
         self.draft = Draft(client, self.entity, self.dialog.draft)
 
         self.is_user = isinstance(self.entity, types.User)
