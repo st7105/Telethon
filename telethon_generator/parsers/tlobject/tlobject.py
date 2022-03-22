@@ -132,12 +132,9 @@ class TLObject:
             f.write(')')
             return
 
-        f.write('\n')
-        indent += 1
         remaining = len(args)
         for arg in args:
             remaining -= 1
-            f.write('    ' * indent)
             f.write(arg.name)
             f.write('=')
             if arg.is_vector:
@@ -147,8 +144,4 @@ class TLObject:
                 f.write(']')
             if remaining:
                 f.write(',')
-            f.write('\n')
-
-        indent -= 1
-        f.write('    ' * indent)
         f.write(')')
