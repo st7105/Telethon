@@ -3,7 +3,7 @@ Forked Telethon |logo|
 
 .. code-block:: py
 
-  Telethon 1.24.0 with Layer 139
+  Telethon 1.24.0 with Layer 140
 
 ======
 
