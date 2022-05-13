@@ -8,7 +8,7 @@ Forked Telethon |logo|
 
 .. code-block:: py
 
-  Telethon 1.24.0 with Layer 140
+  Telethon 1.24.0 with Layer 142
 
 ====
 
