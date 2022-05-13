@@ -1,6 +1,6 @@
-import asyncio
+import sys
+import asyncio 
 import inspect
-import itertools
 import string
 import typing
 
@@ -8,13 +8,13 @@ from .. import helpers, utils, hints, errors
 from ..requestiter import RequestIter
 from ..tl import types, functions, custom
 
+import __main__ as main
 if typing.TYPE_CHECKING:
-    from .telegramclient import TelegramClient
+    from .telegramclient import TelegramClient 
 
 _MAX_PARTICIPANTS_CHUNK_SIZE = 200
 _MAX_ADMIN_LOG_CHUNK_SIZE = 100
 _MAX_PROFILE_PHOTO_CHUNK_SIZE = 100
-
 
 class _ChatAction:
     _str_mapping = {
@@ -107,7 +107,7 @@ class _ParticipantsIter(RequestIter):
                 filter = filter('')
             else:
                 filter = filter()
-
+        self.aggressive = aggressive
         entity = await self.client.get_input_entity(entity)
         ty = helpers._entity_type(entity)
         if search and (filter or ty != helpers._EntityType.CHANNEL):
@@ -187,9 +187,9 @@ class _ParticipantsIter(RequestIter):
             return True
 
     async def _load_next_chunk(self):
+
         if not self.requests:
             return True
-
         # Only care about the limit for the first request
         # (small amount of people, won't be aggressive).
         #
@@ -217,11 +217,35 @@ class _ParticipantsIter(RequestIter):
                     offset=0,
                     limit=1,
                     hash=0
-                ))).count
+                ))).count 
+                
+        results = []
 
-        results = await self.client(self.requests)
+        if self.aggressive:
+            for a in reversed(range(len(self.requests))):
+                k = await self.client(self.requests[a])
+                results.append(k)
+                if self.sleep:
+                    await asyncio.sleep(self.sleep)
+                else:
+                    await asyncio.sleep(1.4)
+        else:
+            for a in reversed(range(len(self.requests))):
+                k = await self.client(self.requests[a])
+                results.append(k)
+                if self.sleep:
+                    await asyncio.sleep(self.sleep)
+                else:
+                    await asyncio.sleep(1.1)
+
+
         for i in reversed(range(len(self.requests))):
-            participants = results[i]
+            try:
+                participants = results[i]
+            except TypeError as e:
+                print(f"Use sleep=time parameter to avoid getting floodwait error.\n{e}")
+
+
             if self.total is None:
                 # Will only get here if there was one request with a filter that matched all users.
                 self.total = participants.count
@@ -415,7 +439,8 @@ class ChatMethods:
             *,
             search: str = '',
             filter: 'types.TypeChannelParticipantsFilter' = None,
-            aggressive: bool = False) -> _ParticipantsIter:
+            aggressive: bool = False,
+            sleep: float = None) -> _ParticipantsIter:
         """
         Iterator over the participants belonging to the specified chat.
 
@@ -480,6 +505,7 @@ class ChatMethods:
         return _ParticipantsIter(
             self,
             limit,
+            sleep,
             entity=entity,
             filter=filter,
             search=search,

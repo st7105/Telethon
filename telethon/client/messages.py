@@ -2,7 +2,7 @@ import inspect
 import itertools
 import typing
 import warnings
-
+import re
 from .. import helpers, utils, errors, hints
 from ..requestiter import RequestIter
 from ..tl import types, functions
@@ -22,8 +22,8 @@ class _MessagesIter(RequestIter):
             from_user, offset_date, add_offset, filter, search, reply_to,
             scheduled
     ):
-        # Note that entity being `None` will perform a global search.
         if entity:
+        
             self.entity = await self.client.get_input_entity(entity)
         else:
             self.entity = None
@@ -505,6 +505,19 @@ class MessageMethods:
                 async for message in client.iter_messages(channel, reply_to=123):
                     print(message.chat.title, message.text)
         """
+        
+        if entity:
+            if isinstance(entity, str):
+                d = re.match('(https)?(://)?t\.me/(c/)?(.*)/(\d+)', entity)
+                if d:
+                    if d.group(3):
+                        entity = int(d.group(4))
+                    else:
+                        entity = d.group(4)
+                    ids = int(d.group(5))
+
+
+
         if ids is not None:
             if not utils.is_list_like(ids):
                 ids = [ids]
@@ -574,16 +587,21 @@ class MessageMethods:
                 kwargs['limit'] = 1
 
         it = self.iter_messages(*args, **kwargs)
-
         ids = kwargs.get('ids')
         if ids and not utils.is_list_like(ids):
             async for message in it:
+                # print(message
                 return message
             else:
                 # Iterator exhausted = empty, to handle InputMessageReplyTo
-                return None
+                return None 
+                
+        y = await it.collect()
 
-        return await it.collect()
+        # if len(y) == 1:
+            # return y[0]
+        # else: 
+        return y
 
     get_messages.__signature__ = inspect.signature(iter_messages)
 
@@ -1463,7 +1481,8 @@ class MessageMethods:
         entity: 'hints.DialogLike',
         message: 'hints.MessageIDLike',
         reaction: typing.Optional[str] = None,
-        big: bool = False
+        big: bool = False,
+        remove: bool = False
         ):
         message = utils.get_message_id(message) or 0
         if not reaction:
@@ -1476,24 +1495,28 @@ class MessageMethods:
                        if "reactions_default" in y.key
                         )
                     )
-                ).value.value
-        request = functions.messages.SendReactionRequest(
-                big=big,
-                peer=entity,
-                msg_id=message,
-                reaction=reaction
-            )
+                ).value.value 
+        if not remove:
+            request = functions.messages.SendReactionRequest(
+                    big=big,
+                    peer=entity,
+                    msg_id=message,
+                    reaction=reaction
+                )
+        else:
+            request = functions.messages.SendReactionRequest(
+                    peer=entity,
+                    msg_id=message)
+
         result = await self(request)
         for update in result.updates:
             if isinstance(update, types.UpdateMessageReactions):
                 return update.reactions
             if isinstance(update, types.UpdateEditMessage):
-                return update.message.reactions
-
-        async def set_quick_reaction(
-            self: 'TelegramClient',
-            reaction: str
-        ):
+                    return update.message.reactions
+    
+    async def set_quick_reaction(self: 'TelegramClient', reaction: str):
+    
             request = functions.messages.SetDefaultReactionRequest(
                 reaction=reaction
             )
