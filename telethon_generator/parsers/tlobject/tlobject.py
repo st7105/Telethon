@@ -4,11 +4,12 @@ import zlib
 
 from ...utils import snake_to_camel_case
 
-# https://github.com/telegramdesktop/tdesktop/blob/4bf66cb6e93f3965b40084771b595e93d0b11bcd/Telegram/SourceFiles/codegen/scheme/codegen_scheme.py#L57-L62
+# https://github.com/telegramdesktop/tdesktop/blob/b5bc567eb808804b665ee7eb934a4dab9cd37a41/Telegram/SourceFiles/codegen/scheme/codegen_scheme.py#L51-L56
 WHITELISTED_MISMATCHING_IDS = {
     # 0 represents any layer
     0: {'channel',  # Since layer 77, there seems to be no going back...
-        'ipPortSecret', 'accessPointRule', 'help.configSimple'}
+        'ipPortSecret', 'accessPointRule', 'help.configSimple', "messageReplies",
+        "channelFull"}
 }
 
 
