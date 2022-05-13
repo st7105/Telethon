@@ -8,7 +8,6 @@ from .. import helpers, utils, hints, errors
 from ..requestiter import RequestIter
 from ..tl import types, functions, custom
 
-import __main__ as main
 if typing.TYPE_CHECKING:
     from .telegramclient import TelegramClient 
 
