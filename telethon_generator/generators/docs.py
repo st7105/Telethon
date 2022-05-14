@@ -164,7 +164,7 @@ def _get_description(arg):
     if arg.can_be_inferred:
         desc.append('If left unspecified, it will be inferred automatically.')
         otherwise = True
-    elif arg.is_flag:
+    elif arg.flag:
         desc.append('This argument defaults to '
                     '<code>None</code> and can be omitted.')
         otherwise = True
@@ -273,7 +273,7 @@ def _write_html_pages(tlobjects, methods, layer, input_res):
 
             # Write the code definition for this TLObject
             docs.write_code(tlobject)
-            docs.write_copy_button('Copy import',
+            docs.write_copy_button('Copy import to the clipboard',
                                    get_import_code(tlobject))
 
             # Write the return type (or constructors belonging to the same type)
@@ -382,24 +382,38 @@ def _write_html_pages(tlobjects, methods, layer, input_res):
                     docs.write_text(
                         'Please refer to the documentation of <a href="'
                         'https://docs.telethon.dev/en/latest/modules/client.html'
-                        '#telethon.client.{0}.{1}"><code>client.{1}()</code></a> '.format(ns, friendly))
-                    docs.write_title('details')
-                docs.code_button()
-                docs.write('''<pre id="code" onclick="cp(document.getElementById('code').innerText)">\
-r = client(''')
-                tlobject.as_example(docs, indent=0)
-                docs.write(')</pre>')
-                
-                
+                        '#telethon.client.{0}.{1}"><code>client.{1}()</code></a> '
+                        'to learn about the parameters and see several code '
+                        'examples on how to use it.'
+                        .format(ns, friendly)
+                    )
+                    docs.write_text(
+                        'The method above is the recommended way to do it. '
+                        'If you need more control over the parameters or want '
+                        'to learn how it is implemented, open the details by '
+                        'clicking on the "Details" text.'
+                    )
+                    docs.write('<details>')
+
+                docs.write('''<pre>\
+<strong>from</strong> telethon.sync <strong>import</strong> TelegramClient
+<strong>from</strong> telethon <strong>import</strong> functions, types
+
+<strong>with</strong> TelegramClient(name, api_id, api_hash) <strong>as</strong> client:
+    result = client(''')
+                tlobject.as_example(docs, indent=1)
+                docs.write(')\n')
                 if tlobject.result.startswith('Vector'):
                     docs.write('''\
-<pre id="extra" onclick="cp(document.getElementById(\'code\').innerText+\'\\n\'+document.getElementById(\'extra\').innerText><strong>for</strong> x <strong>in</strong> r:
-    print(x)</pre>''')
+    <strong>for</strong> x <strong>in</strong> result:
+        print(x''')
                 else:
-                    docs.write('<pre id=\"extra\" onclick=\"cp(document.getElementById(\'code\').innerText+\'\\n\'+document.getElementById(\'extra\').innerText)\">print(r')
+                    docs.write('    print(result')
                     if tlobject.result != 'Bool' \
                             and not tlobject.result.startswith('Vector'):
-                        docs.write('.stringify())</pre>')
+                        docs.write('.stringify()')
+
+                docs.write(')</pre>')
                 if tlobject.friendly:
                     docs.write('</details>')
 

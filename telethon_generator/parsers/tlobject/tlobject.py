@@ -8,8 +8,7 @@ from ...utils import snake_to_camel_case
 WHITELISTED_MISMATCHING_IDS = {
     # 0 represents any layer
     0: {'channel',  # Since layer 77, there seems to be no going back...
-        'ipPortSecret', 'accessPointRule', 'help.configSimple', "messageReplies",
-        "channelFull"}
+        'ipPortSecret', 'accessPointRule', 'help.configSimple', "messageReplies"}
 }
 
 
@@ -73,7 +72,7 @@ class TLObject:
            can be inferred will go last so they can default =None)
         """
         return sorted(self.args,
-                      key=lambda x: x.is_flag or x.can_be_inferred)
+                      key=lambda x: bool(x.flag) or x.can_be_inferred)
 
     def __repr__(self, ignore_id=False):
         if self.id is None or ignore_id:
@@ -96,8 +95,9 @@ class TLObject:
             .replace('<', ' ').replace('>', '')\
             .replace('{', '').replace('}', '')
 
+        # Remove optional empty values (special-cased to the true type)
         representation = re.sub(
-            r' \w+:flags\.\d+\?true',
+            r' \w+:\w+\.\d+\?true',
             r'',
             representation
         )
@@ -133,9 +133,12 @@ class TLObject:
             f.write(')')
             return
 
+        f.write('\n')
+        indent += 1
         remaining = len(args)
         for arg in args:
             remaining -= 1
+            f.write('    ' * indent)
             f.write(arg.name)
             f.write('=')
             if arg.is_vector:
@@ -145,4 +148,8 @@ class TLObject:
                 f.write(']')
             if remaining:
                 f.write(',')
+            f.write('\n')
+
+        indent -= 1
+        f.write('    ' * indent)
         f.write(')')
