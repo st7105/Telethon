@@ -1301,7 +1301,7 @@ class ChatMethods:
             return custom.ParticipantPermissions(participant.participant, False)
         elif helpers._entity_type(entity) == helpers._EntityType.CHAT:
             chat = await self(functions.messages.GetFullChatRequest(
-                entity
+                entity.id
             ))
             if isinstance(user, types.InputPeerSelf):
                 user = await self.get_me(input_peer=True)
