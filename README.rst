@@ -22,7 +22,9 @@ Reactions
 
 .. code-block:: py
 
-    client.send_reaction(peer, message, "😢", big=False), or shorter:
+    client.send_reaction(peer, message, "😢", big=False)
+
+or shorter:
 
 .. code-block:: py
 
@@ -102,14 +104,20 @@ its sleep value can be adjusted using the sleep parameter, this will make it sle
 Content privacy
 ===============
 ``chat.noforwards`` will return True for chats with forward restriction enabled, same applies to bot messages with ``message.noforwards``
+You can use the argument ``noforwards=True`` in sender methods.
 
+.. code-block:: py
+
+    client.send_message(chat, "lonami is god", noforwards=True)
+    
 spoilers
 ========
 You can use `||Text||` to create spoilers, or, for HTML `<tg-spoiler>Text</tg-spoiler>`
 
 to create underline markdown, use --Text--
 
-- also you can now get a single message using the link in get/iter_messages()
+
+also you can now get a single message using the link in get/iter_messages()
 
 .. code-block:: py 
 
