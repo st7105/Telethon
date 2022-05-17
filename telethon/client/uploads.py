@@ -113,7 +113,7 @@ class UploadMethods:
             buttons: 'hints.MarkupLike' = None,
             silent: bool = None,
             background: bool = None,
-            noforwards: bool = None,
+            noforwards: bool = False,
             send_as: 'hints.EntityLike' = None,
             supports_streaming: bool = False,
             schedule: 'hints.DateLike' = None,
@@ -409,7 +409,7 @@ class UploadMethods:
             entity, media, reply_to_msg_id=reply_to, message=caption,
             entities=msg_entities, reply_markup=markup, silent=silent,
             schedule_date=schedule, clear_draft=clear_draft,
-            background=background
+            background=background, noforwards=noforwards
         )
         return self._get_response_message(request, await self(request), entity)
 
@@ -476,7 +476,9 @@ class UploadMethods:
         # Now we can construct the multi-media request
         request = functions.messages.SendMultiMediaRequest(
             entity, reply_to_msg_id=reply_to, multi_media=media,
-            silent=silent, schedule_date=schedule, clear_draft=clear_draft, noforwards=noforwards, send_as=send_as,background=background)
+            silent=silent, schedule_date=schedule, clear_draft=clear_draft, noforwards=noforwards, 
+            send_as=send_as, background=background
+            )
         result = await self(request)
 
         random_ids = [m.random_id for m in media]

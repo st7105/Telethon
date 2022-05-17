@@ -923,7 +923,7 @@ class MessageMethods:
             with_my_score: bool = None,
             silent: bool = None,
             as_album: bool = None,
-            noforwards: bool = None,
+            noforwards: bool = False,
             schedule: 'hints.DateLike' = None
     ) -> 'typing.Sequence[types.Message]':
         """
@@ -1038,7 +1038,7 @@ class MessageMethods:
                 with_my_score=with_my_score,
                 noforwards=noforwards,
                 send_as=send_as,
-                schedule_date=schedule
+                schedule_date=schedule,
             )
             result = await self(req)
             sent.extend(self._get_response_message(req, result, entity))
