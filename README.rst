@@ -100,6 +100,21 @@ its sleep value can be adjusted using the sleep parameter, this will make it sle
 
     client.get_participant(chat, aggressive=True, sleep=2)
 
+WebView Button
+===============
+You can input a web bot button as an inline button or a keyboard button, sine it can be both.
+the default is inline button, you can use the inline=False to use it in a keyboard button
+
+.. code-block:: py
+
+    from telethon import Button
+    client.send_message(chat, "Open Google", buttons=Button.web("google", "https://google.com")
+
+- note that webapp keyboard can be only a single button, it won't allow others with it.
+
+.. code-block:: py
+
+    client.send_message(chat, "YouTube", buttons=Button.web("google", "https://YouTube.com", inline=False)
 
 Content privacy
 ===============
@@ -117,8 +132,11 @@ You can use `||Text||` to create spoilers, or, for HTML `<tg-spoiler>Text</tg-sp
 to create underline markdown, use --Text--
 
 
+link in get message
+===================
 also you can now get a single message using the link in get/iter_messages()
-
 .. code-block:: py 
 
     client.get_messages("https://t.me/username/1")
+
+the message object will also have .link, which will return link of the message

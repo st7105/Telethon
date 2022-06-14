@@ -37,11 +37,12 @@ class Button:
     to 128 characters and add the ellipsis (…) character as
     the 129.
     """
-    def __init__(self, button, *, resize, single_use, selective):
+    def __init__(self, button, *, resize, single_use, selective, inline=True):
         self.button = button
         self.resize = resize
         self.single_use = single_use
-        self.selective = selective
+        self.selective = selective 
+        self.inline = inline
 
     @staticmethod
     def _is_inline(button):
@@ -50,6 +51,7 @@ class Button:
         """
         return isinstance(button, (
             types.KeyboardButtonBuy,
+            types.KeyboardButtonWebView,
             types.KeyboardButtonCallback,
             types.KeyboardButtonGame,
             types.KeyboardButtonSwitchInline,
@@ -57,6 +59,10 @@ class Button:
             types.KeyboardButtonUrl,
             types.InputKeyboardButtonUrlAuth
         ))
+
+    @staticmethod
+    def _is_both(button):
+        return isinstance(button, types.KeyboardButtonWebView)
 
     @staticmethod
     def inline(text, data=None):
@@ -299,6 +305,14 @@ class Button:
         documentation for more information.
         """
         return types.KeyboardButtonBuy(text)
+
+    @classmethod
+    def web(cls, text, url, inline=True, resize=None, single_use=None, selective=None):
+        if inline:
+            return types.KeyboardButtonWebView(text, url)
+
+        return cls(types.KeyboardButtonSimpleWebView(text, url),
+                resize=resize, single_use=single_use, selective=selective)
 
     @staticmethod
     def game(text):

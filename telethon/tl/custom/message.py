@@ -366,7 +366,17 @@ class Message(ChatGetter, SenderGetter, TLObject):
         Setting a value to this field will erase the
         `entities`, unlike changing the `message` member.
         """
-        return self.message
+        return self.message 
+
+    @property
+    def link(self):
+        if not isinstance(self.peer_id, types.PeerUser):
+            if hasattr(self.chat, "username") and self.chat.username:
+                link = f"https://t.me/{self.chat.username}/{self.id}"
+            else:
+                link = f"https://t.me/c/{self.chat.id}/{self.id}"
+            return link
+        return None
 
     @raw_text.setter
     def raw_text(self, value):
