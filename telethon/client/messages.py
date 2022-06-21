@@ -598,10 +598,10 @@ class MessageMethods:
                 
         y = await it.collect()
 
-        if len(y) == 1:
-            return y[0]
-        else: 
-            return y
+        # if len(y) == 1:
+            # return y[0]
+        # else: 
+        return y
 
     get_messages.__signature__ = inspect.signature(iter_messages)
 

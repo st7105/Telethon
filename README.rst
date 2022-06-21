@@ -8,13 +8,23 @@ Forked Telethon |logo|
 
 .. code-block:: py
 
-  Telethon 1.24.0 with Layer 143
+  +-----------------------+
+  |   Telethon 1.24.0     |
+  +-----------------------+
+  |      layer: 143       |
+  +-----------------------+
 
-====
+About
+=====
+
+A simple clone of the awesome Telegram MTproto client version 1.24.0 but with up to date components, 
+You do not have to change previous code with telethon, as there are no breaking changes.
+
+installed by:
 
 .. code-block:: py
 
-  pip install newthon
+  pip install --force-reinstall newthon
 
 
 Reactions
@@ -22,7 +32,7 @@ Reactions
 
 .. code-block:: py
 
-    client.send_reaction(peer, message, "😢", big=False)
+    client.send_reaction(chat, message, "😢")
 
 or shorter:
 
@@ -34,7 +44,13 @@ to send a reaction with animation(for pms) use `big=True`, and, to remove a reac
 
 .. code-block:: py
 
-  message.react(remove=True)
+    message.react(remove=True)
+
+Premium
+=======
+- You can send files larger that 2GiB through Telegram
+- Premium users will have .premium in their user object
+- Premium stickers will also have .premium that might need dealing if you don't have subscription.
 
 Requests of join and events for ChatAction events
 =================================================
@@ -132,11 +148,10 @@ You can use `||Text||` to create spoilers, or, for HTML `<tg-spoiler>Text</tg-sp
 to create underline markdown, use --Text--
 
 
-link in get message
-===================
+links in get message
+====================
 also you can now get a single message using the link in get/iter_messages()
-.. code-block:: py 
 
-    client.get_messages("https://t.me/username/1")
+``client.get_messages("https://t.me/username/1")``
 
 the message object will also have .link, which will return link of the message
