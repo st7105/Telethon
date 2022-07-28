@@ -605,8 +605,8 @@ class UploadMethods:
             hash_md5 = hashlib.md5()
 
             part_count = (file_size + part_size - 1) // part_size
-            self._log[__name__].info('Uploading file of %d bytes in %d chunks of %d',
-                                    file_size, part_count, part_size)
+            self._log[__name__].info('Uploading file of %dMB in %d chunks of %d',
+                                    (file_size/1024) * (1/1024), part_count, part_size)
 
             pos = 0
             for part_index in range(part_count):

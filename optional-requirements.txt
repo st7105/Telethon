@@ -1,3 +1,4 @@
+tgcrypto
 cryptg
 pysocks
 python-socks[asyncio]
