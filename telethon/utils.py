@@ -2,7 +2,6 @@
 Utilities for working with the Telegram API itself (such as handy methods
 to convert between an entity like a User, Chat, etc. into its Input version)
 """
-import telethon
 import base64
 import binascii
 import imghdr
@@ -14,7 +13,7 @@ import math
 import mimetypes
 import os
 import pathlib
-import re 
+import re
 import struct
 from collections import namedtuple
 from mimetypes import guess_extension
@@ -1131,20 +1130,13 @@ def resolve_bot_file_id(file_id):
 
     For thumbnails, the photo ID and hash will always be zero.
     """
-    d = _rle_decode(_decode_telegram_base64(file_id))
-
-    if not d:
-        return None 
-
-    stream = io.BytesIO(d[:-2])
-    version = d[-2]
-
-    ref = stream.read(d[-1])
-    ref = ref if not None else b""
-    data = stream.read()
+    data = _rle_decode(_decode_telegram_base64(file_id))
+    if not data:
+        return None
 
     # This isn't officially documented anywhere, but
     # we assume the last byte is some kind of "version".
+    data, version = data[:-1], data[-1]
     if version not in (2, 4):
         return None
 
@@ -1196,11 +1188,12 @@ def resolve_bot_file_id(file_id):
             thumbs=None,
             dc_id=dc_id,
             attributes=attributes,
-            file_reference=ref
+            file_reference=b''
         )
     elif (version == 2 and len(data) == 44) or (version == 4 and len(data) in (49, 77)):
         if version == 2:
-            (file_type, dc_id, media_id, access_hash, volume_id, secret, local_id) = struct.unpack('<iiqqqqi', data)
+            (file_type, dc_id, media_id, access_hash,
+                volume_id, secret, local_id) = struct.unpack('<iiqqqqi', data)
         # else version == 4:
         elif len(data) == 49:
             # TODO Figure out what the extra five bytes mean
@@ -1220,7 +1213,7 @@ def resolve_bot_file_id(file_id):
         return types.Photo(
             id=media_id,
             access_hash=access_hash,
-            file_reference=ref,
+            file_reference=b'',
             date=None,
             sizes=[types.PhotoSize(
                 type=photo_size,
@@ -1242,7 +1235,6 @@ def pack_bot_file_id(file):
 
     If an invalid parameter is given, it will ``return None``.
     """
-    h = io.BytesIO()
     if isinstance(file, types.MessageMediaDocument):
         file = file.document
     elif isinstance(file, types.MessageMediaPhoto):
@@ -1261,15 +1253,10 @@ def pack_bot_file_id(file):
                 file_type = 10
             else:
                 continue
-            break 
+            break
 
-        h.write(file.file_reference)
-        h.write(struct.pack('<iiqq', file_type, file.dc_id, file.id, file.access_hash))
-        h.write(struct.pack('b', 2))
-        h.write(struct.pack('b', len(file.file_reference)))
-       
-        return _encode_telegram_base64(_rle_encode(h.getvalue()))
-
+        return _encode_telegram_base64(_rle_encode(struct.pack(
+            '<iiqqb', file_type, file.dc_id, file.id, file.access_hash, 2)))
 
     elif isinstance(file, types.Photo):
         size = next((x for x in reversed(file.sizes) if isinstance(
@@ -1278,15 +1265,11 @@ def pack_bot_file_id(file):
         if not size:
             return None
 
-        # size = size.location 
-        h = io.BytesIO()
-
-        h.write(file.file_reference)
-        h.write(struct.pack('<iiqqqqi', 2, file.dc_id, file.id, file.access_hash,0, 0, 0))
-        h.write(struct.pack('b', 2))
-        h.write(struct.pack('b', len(file.file_reference)))
-       
-        return _encode_telegram_base64(_rle_encode(h.getvalue()))
+        # size = size.location
+        return _encode_telegram_base64(_rle_encode(struct.pack(
+            '<iiqqqqib', 2, file.dc_id, file.id, file.access_hash,
+            0, 0, 0, 2  # 0 = old `secret`
+        )))
     else:
         return None
 

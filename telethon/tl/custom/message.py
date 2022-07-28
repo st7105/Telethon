@@ -370,13 +370,14 @@ class Message(ChatGetter, SenderGetter, TLObject):
 
     @property
     def link(self):
+        chat = self.get_chat()
         if not isinstance(self.peer_id, types.PeerUser):
-            if hasattr(self.chat, "username") and self.chat.username:
-                link = f"https://t.me/{self.chat.username}/{self.id}"
+            if hasattr(chat, "username") and chat.username:
+                link = f"https://t.me/{chat.username}/{self.id}"
             else:
-                link = f"https://t.me/c/{self.chat.id}/{self.id}"
+                link = f"https://t.me/c/{chat.id}/{self.id}"
             return link
-        return None
+        return
 
     @raw_text.setter
     def raw_text(self, value):
