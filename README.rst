@@ -11,7 +11,7 @@ Forked Telethon |logo|
   +-----------------------+
   |   Telethon 1.24.0     |
   +-----------------------+
-  |      layer: 143       |
+  |      layer: 144       |
   +-----------------------+
 
 About
@@ -20,11 +20,11 @@ About
 A simple clone of the awesome Telegram MTproto client version 1.24.0 but with up to date components, 
 You do not have to change previous code with telethon, as there are no breaking changes.
 
-installed by:
+install: (if any issues, try uninstalling telethon first):
 
 .. code-block:: py
 
-  pip install --force-reinstall newthon
+  pip install -U newthon
 
 
 Reactions
