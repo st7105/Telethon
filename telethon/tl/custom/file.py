@@ -113,14 +113,14 @@ class File:
         """
         A string with all emoji that represent the current sticker.
         """
-        return self._from_attr(types.DocumentAttributeSticker, 'alt')
+        return self._from_attr((types.DocumentAttributeCustomEmoji, types.DocumentAttributeSticker), 'alt')
 
     @property
     def sticker_set(self):
         """
         The :tl:`InputStickerSet` to which the sticker file belongs.
         """
-        return self._from_attr(types.DocumentAttributeSticker, 'stickerset')
+        return self._from_attr((types.DocumentAttributeSticker, types.DocumentAttributeCustomEmoji), 'stickerset')
 
     @property
     def size(self):
