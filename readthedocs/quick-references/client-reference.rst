@@ -69,6 +69,7 @@ Messages
     unpin_message
     send_read_acknowledge
     send_reaction
+    set_quick_reaction
 
 Uploads
 -------
