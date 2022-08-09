@@ -23,6 +23,9 @@ async def test_send_message_with_file_forwards_args():
         if name in {'send_as'}:
             continue
 
+        if name in {'noforwards'}:
+            continue
+
         arguments[name] = value
 
     class MockedClient(TelegramClient):
