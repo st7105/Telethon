@@ -2,6 +2,7 @@ import os
 import struct
 import time
 from hashlib import sha256
+import bisect
 
 from ..crypto import AES
 from ..errors import SecurityError, InvalidBufferError
@@ -11,6 +12,8 @@ from ..tl.tlobject import TLRequest
 from ..tl.functions import InvokeAfterMsgRequest
 from ..tl.core.gzippacked import GzipPacked
 
+MAX_SAVE_COUNT = 1000
+MAX_CONSECUTIVE_IGNORES = 15 
 
 class _OpaqueRequest(TLRequest):
     """
@@ -52,7 +55,8 @@ class MTProtoState:
         self._log = loggers[__name__]
         self.time_offset = 0
         self.salt = 0
-
+        self.ignore_count = 0
+        self.saved_msg_ids = []
         self.id = self._sequence = self._last_msg_id = None
         self.reset()
 
@@ -64,6 +68,8 @@ class MTProtoState:
         self.id = struct.unpack('q', os.urandom(8))[0]
         self._sequence = 0
         self._last_msg_id = 0
+        self.ignore_count = 0
+        self.saved_msg_ids.clear()
 
     def update_message_id(self, message):
         """
@@ -154,20 +160,40 @@ class MTProtoState:
                 "Received msg_key doesn't match with expected one")
 
         reader = BinaryReader(body)
-        reader.read_long()  # remote_salt
-        if reader.read_long() != self.id:
-            raise SecurityError('Server replied with a wrong session ID')
+        reader.read_long()  # remote_salt 
+        reader.read_long()
+        # if reader.read_long() != self.id:
+            # raise SecurityError('Server replied with a wrong session ID')
 
         remote_msg_id = reader.read_long()
         remote_sequence = reader.read_int()
-        reader.read_int()  # msg_len for the inner object, padding ignored
-
+        reader.read_int()  # msg_len for the inner object, padding ignored 
+        
         # We could read msg_len bytes and use those in a new reader to read
         # the next TLObject without including the padding, but since the
         # reader isn't used for anything else after this, it's unnecessary.
         obj = reader.tgread_object()
+        
+        if remote_msg_id % 2 == 0:
+            raise SecurityError('Server sent an even msg_id')
+        if self.saved_msg_ids:
+            if len(self.saved_msg_ids) > MAX_SAVE_COUNT:
+                del self.saved_msg_ids[:MAX_SAVE_COUNT // 2]
+                
+            if remote_msg_id < self.saved_msg_ids[0] or remote_msg_id in self.saved_msg_ids:
+                self._log.warning('Server resent the older message %d, ignoring', remote_msg_id)
+                self.count_ignored()
+                return None 
+
+        bisect.insort(self.saved_msg_ids, remote_msg_id)
 
         return TLMessage(remote_msg_id, remote_sequence, obj)
+
+    def count_ignored(self):
+        self.ignore_count += 1
+        if self.ignore_count >= MAX_CONSECUTIVE_IGNORES:
+            raise SecurityError('Too many messages had to be ignored consecutively')
+
 
     def _get_new_msg_id(self):
         """

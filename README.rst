@@ -1,83 +1,157 @@
-Telethon
+Forked Telethon |logo|
+======================
+.. |logo| image:: https://github.com/LonamiWebs/Telethon/raw/master/logo.svg
+    :width: 60pt
+    :height: 60pt
+
+`↗️ Updated tl.telethon.dev <https://disk6969.github.io/Telethon>`_
+
+.. code-block:: py
+
+  +-----------------------+
+  |   Telethon 1.24.0     |
+  +-----------------------+
+  |      layer: 144       |
+  +-----------------------+
+
+About
+=====
+
+A simple clone of the awesome Telegram MTproto client version 1.24.0 but with up to date components, 
+You do not have to change previous code with telethon, as there are no breaking changes.
+
+install: (if any issues, try uninstalling telethon first):
+
+.. code-block:: py
+
+  pip install -U newthon
+
+
+Reactions
+=========
+
+.. code-block:: py
+
+    client.send_reaction(chat, message, "😢")
+
+or shorter:
+
+.. code-block:: py
+
+    message.react("😁", big=True)
+
+to send a reaction with animation(for pms) use `big=True`, and, to remove a reaction use `remove=True`: 
+
+.. code-block:: py
+
+    message.react(remove=True)
+
+Premium
+=======
+- You can send files larger that 2GiB through Telegram
+- Premium users will have .premium in their user object
+- Premium stickers will also have .premium that might need dealing if you don't have subscription.
+
+Requests of join and events for ChatAction events
+=================================================
+* event.new_invite (only for bot accounts)
+
+.. code-block:: py
+
+    @bot.on(events.ChatAction(func=lambda e : e.new_join_request))
+    async def _(event):
+        event.approve_user(approved=True or False)
+
+
+* event.new_approve for user accounts
+
+.. code-block:: py
+
+    @client.on(events.ChatAction(func=lambda e : e.new_approve))
+    async def _(event):
+        event.approve_user(approved=True/False)
+
+
+using raw api to accept old requests
+------------------------------------
+
+- Getting them
+
+.. code-block:: py
+
+    result = client(functions.messages.GetChatInviteImportersRequest(
+        peer="chat",
+        offset_date=None, 
+        offset_user=telethon.tl.types.InputUserEmpty(),
+        limit=1000
+    ))
+
+- manual approve
+
+.. code-block:: py
+
+    for a in result:
+        client(functions.messages.HideChatJoinRequestRequest(
+            peer='chat or username',
+            user_id='To-approve',
+            approved=True or False
+        ))
+
+
+- batch approve: 
+
+.. code-block:: py 
+
+    client(functions.messages.HideAllChatJoinRequestsRequest(
+        peer=entity, 
+        approved=True or False
+    ))
+
+iter_participant
+================
+aggressive True will sleep by default.
+its sleep value can be adjusted using the sleep parameter, this will make it sleep for that specified amount before processing next chunk.
+
+.. code-block:: py 
+
+    client.get_participant(chat, aggressive=True, sleep=2)
+
+WebView Button
+===============
+You can input a web bot button as an inline button or a keyboard button, sine it can be both.
+the default is inline button, you can use the inline=False to use it in a keyboard button
+
+.. code-block:: py
+
+    from telethon import Button
+    client.send_message(chat, "Open Google", buttons=Button.web("google", "https://google.com")
+
+- note that webapp keyboard can be only a single button, it won't allow others with it.
+
+.. code-block:: py
+
+    client.send_message(chat, "YouTube", buttons=Button.web("google", "https://YouTube.com", inline=False)
+
+Content privacy
+===============
+``chat.noforwards`` will return True for chats with forward restriction enabled, same applies to bot messages with ``message.noforwards``
+You can use the argument ``noforwards=True`` in sender methods.
+
+.. code-block:: py
+
+    client.send_message(chat, "lonami is god", noforwards=True)
+    
+spoilers
 ========
-.. epigraph::
+You can use `||Text||` to create spoilers, or, for HTML `<tg-spoiler>Text</tg-spoiler>`
 
-  ⭐️ Thanks **everyone** who has starred the project, it means a lot!
-
-|logo| **Telethon** is an asyncio_ **Python 3**
-MTProto_ library to interact with Telegram_'s API
-as a user or through a bot account (bot API alternative).
-
-.. important::
-
-    If you have code using Telethon before its 1.0 version, you must
-    read `Compatibility and Convenience`_ to learn how to migrate.
-
-What is this?
--------------
-
-Telegram is a popular messaging application. This library is meant
-to make it easy for you to write Python programs that can interact
-with Telegram. Think of it as a wrapper that has already done the
-heavy job for you, so you can focus on developing an application.
+to create underline markdown, use --Text--
 
 
-Installing
-----------
+links in get message
+====================
+also you can now get a single message using the link in get/iter_messages()
 
-.. code-block:: sh
+``client.get_messages("https://t.me/username/1")``
 
-  pip3 install telethon
-
-
-Creating a client
------------------
-
-.. code-block:: python
-
-    from telethon import TelegramClient, events, sync
-
-    # These example values won't work. You must get your own api_id and
-    # api_hash from https://my.telegram.org, under API Development.
-    api_id = 12345
-    api_hash = '0123456789abcdef0123456789abcdef'
-
-    client = TelegramClient('session_name', api_id, api_hash)
-    client.start()
-
-
-Doing stuff
------------
-
-.. code-block:: python
-
-    print(client.get_me().stringify())
-
-    client.send_message('username', 'Hello! Talking to you from Telethon')
-    client.send_file('username', '/home/myself/Pictures/holidays.jpg')
-
-    client.download_profile_photo('me')
-    messages = client.get_messages('username')
-    messages[0].download_media()
-
-    @client.on(events.NewMessage(pattern='(?i)hi|hello'))
-    async def handler(event):
-        await event.respond('Hey!')
-
-
-Next steps
-----------
-
-Do you like how Telethon looks? Check out `Read The Docs`_ for a more
-in-depth explanation, with examples, troubleshooting issues, and more
-useful information.
-
-.. _asyncio: https://docs.python.org/3/library/asyncio.html
-.. _MTProto: https://core.telegram.org/mtproto
-.. _Telegram: https://telegram.org
-.. _Compatibility and Convenience: https://docs.telethon.dev/en/latest/misc/compatibility-and-convenience.html
-.. _Read The Docs: https://docs.telethon.dev
-
-.. |logo| image:: logo.svg
-    :width: 24pt
-    :height: 24pt
+the message object will also have .link, which will return link of the message

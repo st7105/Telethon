@@ -4,11 +4,11 @@ import zlib
 
 from ...utils import snake_to_camel_case
 
-# https://github.com/telegramdesktop/tdesktop/blob/4bf66cb6e93f3965b40084771b595e93d0b11bcd/Telegram/SourceFiles/codegen/scheme/codegen_scheme.py#L57-L62
+# https://github.com/telegramdesktop/tdesktop/blob/b5bc567eb808804b665ee7eb934a4dab9cd37a41/Telegram/SourceFiles/codegen/scheme/codegen_scheme.py#L51-L56
 WHITELISTED_MISMATCHING_IDS = {
     # 0 represents any layer
     0: {'channel',  # Since layer 77, there seems to be no going back...
-        'ipPortSecret', 'accessPointRule', 'help.configSimple'}
+        'ipPortSecret', 'accessPointRule', 'help.configSimple', "messageReplies"}
 }
 
 
@@ -72,7 +72,7 @@ class TLObject:
            can be inferred will go last so they can default =None)
         """
         return sorted(self.args,
-                      key=lambda x: x.is_flag or x.can_be_inferred)
+                      key=lambda x: bool(x.flag) or x.can_be_inferred)
 
     def __repr__(self, ignore_id=False):
         if self.id is None or ignore_id:
@@ -95,8 +95,9 @@ class TLObject:
             .replace('<', ' ').replace('>', '')\
             .replace('{', '').replace('}', '')
 
+        # Remove optional empty values (special-cased to the true type)
         representation = re.sub(
-            r' \w+:flags\.\d+\?true',
+            r' \w+:\w+\.\d+\?true',
             r'',
             representation
         )

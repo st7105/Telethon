@@ -54,7 +54,7 @@ mimetypes.add_type('audio/flac', '.flac')
 mimetypes.add_type('application/x-tgsticker', '.tgs')
 
 USERNAME_RE = re.compile(
-    r'@|(?:https?://)?(?:www\.)?(?:telegram\.(?:me|dog)|t\.me)/(@|joinchat/)?'
+    r'@|(?:https?://)?(?:www\.)?(?:telegram\.(?:me|dog)|t\.me)/(@|joinchat/|\+)?'
 )
 TG_JOIN_RE = re.compile(
     r'tg://(join)\?invite='
@@ -1265,10 +1265,10 @@ def pack_bot_file_id(file):
         if not size:
             return None
 
-        size = size.location
+        # size = size.location
         return _encode_telegram_base64(_rle_encode(struct.pack(
             '<iiqqqqib', 2, file.dc_id, file.id, file.access_hash,
-            size.volume_id, 0, size.local_id, 2  # 0 = old `secret`
+            0, 0, 0, 2  # 0 = old `secret`
         )))
     else:
         return None
@@ -1341,7 +1341,7 @@ def get_appropriated_part_size(file_size):
         return 128
     if file_size <= 786432000:  # 750MB
         return 256
-    if file_size <= 2097152000:  # 2000MB
+    if file_size <= 4194304000:  # 4000MB
         return 512
 
     raise ValueError('File size too large')

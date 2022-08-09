@@ -12,7 +12,7 @@ from ..tl.types import (
     MessageEntityBold, MessageEntityItalic, MessageEntityCode,
     MessageEntityPre, MessageEntityEmail, MessageEntityUrl,
     MessageEntityTextUrl, MessageEntityMentionName,
-    MessageEntityUnderline, MessageEntityStrike, MessageEntityBlockquote,
+    MessageEntityUnderline, MessageEntityStrike, MessageEntitySpoiler, MessageEntityBlockquote,
     TypeMessageEntity
 )
 
@@ -52,7 +52,9 @@ class HTMLToTelegramParser(HTMLParser):
         elif tag == 'u':
             EntityType = MessageEntityUnderline
         elif tag == 'del' or tag == 's':
-            EntityType = MessageEntityStrike
+            EntityType = MessageEntityStrike 
+        elif tag == 'tg-spoiler':
+            EntityType = MessageEntitySpoiler
         elif tag == 'blockquote':
             EntityType = MessageEntityBlockquote
         elif tag == 'code':
@@ -193,6 +195,8 @@ def unparse(text: str, entities: Iterable[TypeMessageEntity], _offset: int = 0,
             html.append('<code>{}</code>'.format(entity_text))
         elif entity_type == MessageEntityUnderline:
             html.append('<u>{}</u>'.format(entity_text))
+        elif entity_type == MessageEntitySpoiler:
+            html.append('<tg-spoiler>{}</tg-spoiler>'.format(entity_text))
         elif entity_type == MessageEntityStrike:
             html.append('<del>{}</del>'.format(entity_text))
         elif entity_type == MessageEntityBlockquote:

@@ -113,6 +113,8 @@ class UploadMethods:
             buttons: 'hints.MarkupLike' = None,
             silent: bool = None,
             background: bool = None,
+            noforwards: bool = False,
+            send_as: 'hints.EntityLike' = None,
             supports_streaming: bool = False,
             schedule: 'hints.DateLike' = None,
             comment_to: 'typing.Union[int, types.Message]' = None,
@@ -364,7 +366,7 @@ class UploadMethods:
                     progress_callback=progress_callback, reply_to=reply_to,
                     parse_mode=parse_mode, silent=silent, schedule=schedule,
                     supports_streaming=supports_streaming, clear_draft=clear_draft,
-                    force_document=force_document, background=background,
+                    force_document=force_document, noforwards=noforwards, send_as=send_as, background=background
                 )
                 file = file[10:]
                 captions = captions[10:]
@@ -377,7 +379,7 @@ class UploadMethods:
                     attributes=attributes, thumb=thumb, voice_note=voice_note,
                     video_note=video_note, buttons=buttons, silent=silent,
                     supports_streaming=supports_streaming, schedule=schedule,
-                    clear_draft=clear_draft, background=background,
+                    clear_draft=clear_draft, noforwards=noforwards, send_as=send_as, background=background,
                     **kwargs
                 ))
 
@@ -407,7 +409,7 @@ class UploadMethods:
             entity, media, reply_to_msg_id=reply_to, message=caption,
             entities=msg_entities, reply_markup=markup, silent=silent,
             schedule_date=schedule, clear_draft=clear_draft,
-            background=background
+            background=background, noforwards=noforwards
         )
         return self._get_response_message(request, await self(request), entity)
 
@@ -415,7 +417,7 @@ class UploadMethods:
                           progress_callback=None, reply_to=None,
                           parse_mode=(), silent=None, schedule=None,
                           supports_streaming=None, clear_draft=None,
-                          force_document=False, background=None, ttl=None):
+                          force_document=False, noforwards=None, send_as=None, background=None, ttl=None):
         """Specialized version of .send_file for albums"""
         # We don't care if the user wants to avoid cache, we will use it
         # anyway. Why? The cached version will be exactly the same thing
@@ -474,9 +476,9 @@ class UploadMethods:
         # Now we can construct the multi-media request
         request = functions.messages.SendMultiMediaRequest(
             entity, reply_to_msg_id=reply_to, multi_media=media,
-            silent=silent, schedule_date=schedule, clear_draft=clear_draft,
-            background=background
-        )
+            silent=silent, schedule_date=schedule, clear_draft=clear_draft, noforwards=noforwards, 
+            send_as=send_as, background=background
+            )
         result = await self(request)
 
         random_ids = [m.random_id for m in media]
@@ -603,8 +605,8 @@ class UploadMethods:
             hash_md5 = hashlib.md5()
 
             part_count = (file_size + part_size - 1) // part_size
-            self._log[__name__].info('Uploading file of %d bytes in %d chunks of %d',
-                                    file_size, part_count, part_size)
+            self._log[__name__].info('Uploading file of %dMB in %d chunks of %d',
+                                    (file_size/1024) * (1/1024), part_count, part_size)
 
             pos = 0
             for part_index in range(part_count):

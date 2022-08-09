@@ -165,6 +165,7 @@ class Message(ChatGetter, SenderGetter, TLObject):
             # Common to Message and MessageService (mandatory)
             peer_id: types.TypePeer = None,
             date: Optional[datetime] = None,
+            noforwards: Optional[bool] = None,
 
             # Common to Message and MessageService (flags)
             out: Optional[bool] = None,
@@ -188,6 +189,7 @@ class Message(ChatGetter, SenderGetter, TLObject):
             views: Optional[int] = None,
             edit_date: Optional[datetime] = None,
             post_author: Optional[str] = None,
+            reactions: Optional[str] = None,
             grouped_id: Optional[int] = None,
             from_scheduled: Optional[bool] = None,
             legacy: Optional[bool] = None,
@@ -212,11 +214,13 @@ class Message(ChatGetter, SenderGetter, TLObject):
         self.id = id
         self.from_id = from_id
         self.peer_id = peer_id
+        self.noforwards = noforwards
         self.fwd_from = fwd_from
         self.via_bot_id = via_bot_id
         self.reply_to = reply_to
         self.date = date
         self.message = message
+        self.reactions = reactions
         self.media =  None if isinstance(media, types.MessageMediaEmpty) else media
         self.reply_markup = reply_markup
         self.entities = entities
@@ -362,7 +366,17 @@ class Message(ChatGetter, SenderGetter, TLObject):
         Setting a value to this field will erase the
         `entities`, unlike changing the `message` member.
         """
-        return self.message
+        return self.message 
+
+    @property
+    def link(self):
+        if not isinstance(self.peer_id, types.PeerUser):
+            if hasattr(self.chat, "username") and self.chat.username:
+                link = f"https://t.me/{self.chat.username}/{self.id}"
+            else:
+                link = f"https://t.me/c/{self.chat.id}/{self.id}"
+            return link
+        return None
 
     @raw_text.setter
     def raw_text(self, value):
@@ -1061,6 +1075,21 @@ class Message(ChatGetter, SenderGetter, TLObject):
             return await self._client.unpin_message(
                 await self.get_input_chat(), self.id)
 
+    async def react(self, reaction=None, big=False, remove=False):
+        """
+        Reacts on the given message. Shorthand for
+        `telethon.client.messages.MessageMethods.send_reaction`
+        with both ``entity`` and ``message`` already set.
+        """
+        if self._client:
+            return await self._client.send_reaction(
+                await self.get_input_chat(),
+                self.id,
+                reaction,
+                big,
+                remove
+            )
+            
     # endregion Public Methods
 
     # region Private Methods

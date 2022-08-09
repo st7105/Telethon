@@ -106,7 +106,10 @@ class MessageButton:
             try:
                 return await self._client(req)
             except BotResponseTimeoutError:
-                return None
+                return None 
+        elif isinstance(self.button, types.KeyboardButtonUserProfile):
+            return await self.client.get_entity(self.button.user_id)
+
         elif isinstance(self.button, types.KeyboardButtonSwitchInline):
             return await self._client(functions.messages.StartBotRequest(
                 bot=self._bot, peer=self._chat, start_param=self.button.query

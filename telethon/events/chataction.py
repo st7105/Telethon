@@ -1,6 +1,6 @@
 from .common import EventBuilder, EventCommon, name_inner_event
 from .. import utils
-from ..tl import types
+from ..tl import types, functions
 
 
 @name_inner_event
@@ -50,11 +50,17 @@ class ChatAction(EventBuilder):
             return cls.Event(types.PeerChat(update.chat_id),
                              added_by=update.inviter_id or True,
                              users=update.user_id)
-
+                             
         elif isinstance(update, types.UpdateChatParticipantDelete):
             return cls.Event(types.PeerChat(update.chat_id),
                              kicked_by=True,
                              users=update.user_id)
+
+        elif isinstance(update, types.UpdateBotChatInviteRequester):
+            return cls.Event(update.peer, new_join_request = update.invite, users = update.user_id)
+
+        elif isinstance(update, types.UpdatePendingJoinRequests):
+            return cls.Event(update.peer, new_approve = update.requests_pending, users = update.recent_requesters)
 
         # UpdateChannel is sent if we leave a channel, and the update._entities
         # set by _process_update would let us make some guesses. However it's
@@ -75,6 +81,10 @@ class ChatAction(EventBuilder):
                 return cls.Event(msg,
                                  added_by=added_by,
                                  users=action.users)
+            elif isinstance(action, types.MessageActionChatJoinedByRequest):
+                return cls.Event(msg, from_approval=True, users=update.message.from_id)
+
+
             elif isinstance(action, types.MessageActionChatDeleteUser):
                 return cls.Event(msg,
                                  kicked_by=utils.get_peer_id(msg.from_id) if msg.from_id else True,
@@ -151,8 +161,8 @@ class ChatAction(EventBuilder):
         """
 
         def __init__(self, where, new_photo=None,
-                     added_by=None, kicked_by=None, created=None,
-                     users=None, new_title=None, pin_ids=None, pin=None, new_score=None):
+                     added_by=None, kicked_by=None, new_join_request=None, from_approval=None, created=None,
+                     users=None, new_approve=None, new_title=None, pin_ids=None, pin=None, new_score=None):
             if isinstance(where, types.MessageService):
                 self.action_message = where
                 where = where.peer_id
@@ -176,11 +186,15 @@ class ChatAction(EventBuilder):
             self.user_added = self.user_joined = self.user_left = \
                 self.user_kicked = self.unpin = False
 
-            if added_by is True:
+            if added_by is True or from_approval is True:
                 self.user_joined = True
             elif added_by:
-                self.user_added = True
-                self._added_by = added_by
+                self.user_added = True 
+                self._added_by = added_by 
+            
+            self.user_approved = from_approval
+            self.new_join_request = new_join_request
+            self.new_approve = new_approve
 
             # If `from_id` was not present (it's `True`) or the affected
             # user was "kicked by itself", then it left. Else it was kicked.
@@ -276,8 +290,24 @@ class ChatAction(EventBuilder):
                 self._pinned_messages = await self._client.get_messages(
                     self._input_chat, ids=self._pin_ids)
 
-            return self._pinned_messages
+            return self._pinned_messages 
 
+        async def approve_user(self, approved: bool = True, link: str = None):
+            """
+            Approve or disapprove chat join request of user.
+            """
+            if self.new_join_request:
+                return await self.client(functions.messages.HideChatJoinRequestRequest(
+                    await self.get_input_chat(),
+                    user_id=self.user_id,
+                    approved=approved
+                ))
+            elif self.new_approve:
+                return await self.client(functions.messages.HideAllChatJoinRequestsRequest(
+                    await self.get_input_chat(),
+                    approved=approved,
+                    link = link
+                ))
         @property
         def added_by(self):
             """

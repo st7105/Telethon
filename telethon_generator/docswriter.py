@@ -27,6 +27,7 @@ class DocsWriter:
         self.table_columns = 0
         self.table_columns_left = None
         self.write_copy_script = False
+        self.code = False
         self._script = ''
 
     def _rel(self, path):
@@ -249,8 +250,12 @@ class DocsWriter:
         """Writes a button with 'text' which can be used
            to copy 'text_to_copy' to clipboard when it's clicked."""
         self.write_copy_script = True
-        self.write('<button onclick="cp(\'{}\');">{}</button>'
-                   .format(text_to_copy, text))
+        self.write('<button onclick="cp(\'{}\');">{}</button>'.format(text_to_copy, text))
+
+    
+    def code_button(self):
+        self.code = True
+        self.write('<button onclick="vr();">Edit code</button>')
 
     def add_script(self, src='', path=None):
         if path:
@@ -273,7 +278,14 @@ class DocsWriter:
                 'catch(e){}}'
                 '</script>'
             )
-
+            
+        if self.code:
+            self.write(
+                '<script>'
+                'function vr()'
+                "{window.prompt('', document.getElementById('code').innerText)}"
+                '</script>'
+            )
         self.write('</div>{}</body></html>', self._script)
 
     # "Low" level writing

@@ -26,12 +26,13 @@ class RequestIter(abc.ABC):
     be set to `True` if that's the case. Note that if this flag is set,
     `buffer` should be filled in reverse too.
     """
-    def __init__(self, client, limit, *, reverse=False, wait_time=None, **kwargs):
+    def __init__(self, client, limit, sleep=None, *, reverse=False, wait_time=None, **kwargs):
         self.client = client
         self.reverse = reverse
         self.wait_time = wait_time
         self.kwargs = kwargs
         self.limit = max(float('inf') if limit is None else limit, 0)
+        self.sleep = False if sleep is None else sleep
         self.left = self.limit
         self.buffer = None
         self.index = 0

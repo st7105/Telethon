@@ -61,6 +61,7 @@ IMPORT_DEPTH = 2
 DOCS_IN_RES = GENERATOR_DIR / 'data/html'
 DOCS_OUT = Path('docs')
 
+run('python3 -m pip uninstall telethon', shell=True)
 
 def generate(which, action='gen'):
     from telethon_generator.parsers import\
@@ -87,7 +88,6 @@ def generate(which, action='gen'):
         for x in ('tl', 'errors', 'docs'):
             if x not in which:
                 which.append(x)
-
     if 'tl' in which:
         which.remove('tl')
         print(action, 'TLObjects...')
@@ -192,19 +192,16 @@ def main(argv):
             version = re.search(r"^__version__\s*=\s*'(.*)'.*$",
                                 f.read(), flags=re.MULTILINE).group(1)
         setup(
-            name='Telethon',
+            name='newthon',
             version=version,
-            description="Full-featured Telegram client library for Python 3",
+            description="An edited 1.24.0 version of the full-featured Telegram client library for Python 3",
             long_description=long_description,
-
-            url='https://github.com/LonamiWebs/Telethon',
+            long_description_content_type="text/x-rst",
+            url='https://github.com/disk6969/Telethon',
             download_url='https://github.com/LonamiWebs/Telethon/releases',
-
             author='Lonami Exo',
             author_email='totufals@hotmail.com',
-
             license='MIT',
-
             # See https://stackoverflow.com/a/40300957/4759433
             # -> https://www.python.org/dev/peps/pep-0345/#requires-python
             # -> http://setuptools.readthedocs.io/en/latest/setuptools.html

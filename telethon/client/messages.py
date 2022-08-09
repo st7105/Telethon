@@ -2,7 +2,7 @@ import inspect
 import itertools
 import typing
 import warnings
-
+import re
 from .. import helpers, utils, errors, hints
 from ..requestiter import RequestIter
 from ..tl import types, functions
@@ -22,8 +22,8 @@ class _MessagesIter(RequestIter):
             from_user, offset_date, add_offset, filter, search, reply_to,
             scheduled
     ):
-        # Note that entity being `None` will perform a global search.
         if entity:
+        
             self.entity = await self.client.get_input_entity(entity)
         else:
             self.entity = None
@@ -505,6 +505,19 @@ class MessageMethods:
                 async for message in client.iter_messages(channel, reply_to=123):
                     print(message.chat.title, message.text)
         """
+        
+        if entity:
+            if isinstance(entity, str):
+                d = re.match('(https)?(://)?t\.me/(c/)?(.*)/(\d+)', entity)
+                if d:
+                    if d.group(3):
+                        entity = int(d.group(4))
+                    else:
+                        entity = d.group(4)
+                    ids = int(d.group(5))
+
+
+
         if ids is not None:
             if not utils.is_list_like(ids):
                 ids = [ids]
@@ -574,16 +587,21 @@ class MessageMethods:
                 kwargs['limit'] = 1
 
         it = self.iter_messages(*args, **kwargs)
-
         ids = kwargs.get('ids')
         if ids and not utils.is_list_like(ids):
             async for message in it:
+                # print(message
                 return message
             else:
                 # Iterator exhausted = empty, to handle InputMessageReplyTo
-                return None
+                return None 
+                
+        y = await it.collect()
 
-        return await it.collect()
+        # if len(y) == 1:
+            # return y[0]
+        # else: 
+        return y
 
     get_messages.__signature__ = inspect.signature(iter_messages)
 
@@ -610,6 +628,9 @@ class MessageMethods:
             message: 'hints.MessageLike' = '',
             *,
             reply_to: 'typing.Union[int, types.Message]' = None,
+            send_as: 'hints.DialogLike' = None,
+            noforwards: bool = None,
+
             attributes: 'typing.Sequence[types.TypeDocumentAttribute]' = None,
             parse_mode: typing.Optional[str] = (),
             formatting_entities: typing.Optional[typing.List[types.TypeMessageEntity]] = None,
@@ -845,6 +866,8 @@ class MessageMethods:
                 clear_draft=clear_draft,
                 no_webpage=not isinstance(
                     message.media, types.MessageMediaWebPage),
+                noforwards=noforwards,
+                send_as=send_as,
                 schedule_date=schedule
             )
             message = message.message
@@ -866,6 +889,8 @@ class MessageMethods:
                 silent=silent,
                 background=background,
                 reply_markup=self.build_reply_markup(buttons),
+                noforwards=noforwards,
+                send_as=send_as,
                 schedule_date=schedule
             )
 
@@ -892,11 +917,13 @@ class MessageMethods:
             entity: 'hints.EntityLike',
             messages: 'typing.Union[hints.MessageIDLike, typing.Sequence[hints.MessageIDLike]]',
             from_peer: 'hints.EntityLike' = None,
+            send_as: 'hints.DialogLike' = None,
             *,
             background: bool = None,
             with_my_score: bool = None,
             silent: bool = None,
             as_album: bool = None,
+            noforwards: bool = False,
             schedule: 'hints.DateLike' = None
     ) -> 'typing.Sequence[types.Message]':
         """
@@ -1009,7 +1036,9 @@ class MessageMethods:
                 silent=silent,
                 background=background,
                 with_my_score=with_my_score,
-                schedule_date=schedule
+                noforwards=noforwards,
+                send_as=send_as,
+                schedule_date=schedule,
             )
             result = await self(req)
             sent.extend(self._get_response_message(req, result, entity))
@@ -1277,7 +1306,8 @@ class MessageMethods:
             message: 'typing.Union[hints.MessageIDLike, typing.Sequence[hints.MessageIDLike]]' = None,
             *,
             max_id: int = None,
-            clear_mentions: bool = False) -> bool:
+            clear_mentions: bool = False,
+            clear_reactions: bool = False) -> bool:
         """
         Marks messages as read and optionally clears mentions.
 
@@ -1335,6 +1365,8 @@ class MessageMethods:
             await self(functions.messages.ReadMentionsRequest(entity))
             if max_id is None:
                 return True
+        if clear_reactions:
+            await self(functions.messages.ReadReactions(entity))
 
         if max_id is not None:
             if helpers._entity_type(entity) == helpers._EntityType.CHANNEL:
@@ -1443,6 +1475,52 @@ class MessageMethods:
         # Pinning a message that doesn't exist would RPC-error earlier
         return self._get_response_message(request, result, entity)
 
-    # endregion
 
-    # endregion
+    async def send_reaction(
+        self: 'TelegramClient',
+        entity: 'hints.DialogLike',
+        message: 'hints.MessageIDLike',
+        reaction: typing.Optional[str] = None,
+        big: bool = False,
+        remove: bool = False
+        ):
+        message = utils.get_message_id(message) or 0
+        if not reaction:
+            get_default_request = functions.help.GetAppConfigRequest()
+            app_config = await self(get_default_request)
+            reaction = (
+                next(
+                    (
+                       y for y in app_config.value
+                       if "reactions_default" in y.key
+                        )
+                    )
+                ).value.value 
+        if not remove:
+            request = functions.messages.SendReactionRequest(
+                    big=big,
+                    peer=entity,
+                    msg_id=message,
+                    reaction=reaction
+                )
+        else:
+            request = functions.messages.SendReactionRequest(
+                    peer=entity,
+                    msg_id=message)
+
+        result = await self(request)
+        for update in result.updates:
+            if isinstance(update, types.UpdateMessageReactions):
+                return update.reactions
+            if isinstance(update, types.UpdateEditMessage):
+                    return update.message.reactions
+    
+    async def set_quick_reaction(self: 'TelegramClient', reaction: str):
+    
+            request = functions.messages.SetDefaultReactionRequest(
+                reaction=reaction
+            )
+            return await self(request)
+        
+            # endregion
+        

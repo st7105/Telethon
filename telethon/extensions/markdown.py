@@ -11,18 +11,21 @@ from ..tl import TLObject
 from ..tl.types import (
     MessageEntityBold, MessageEntityItalic, MessageEntityCode,
     MessageEntityPre, MessageEntityTextUrl, MessageEntityMentionName,
-    MessageEntityStrike
+    MessageEntityStrike, MessageEntitySpoiler, MessageEntityUnderline
 )
 
 DEFAULT_DELIMITERS = {
     '**': MessageEntityBold,
     '__': MessageEntityItalic,
     '~~': MessageEntityStrike,
+    '||': MessageEntitySpoiler,
     '`': MessageEntityCode,
-    '```': MessageEntityPre
+    '```': MessageEntityPre,
+    '--': MessageEntityUnderline
 }
 
 DEFAULT_URL_RE = re.compile(r'\[([\S\s]+?)\]\((.+?)\)')
+men_re = re.compile(r'\(([\S\s]+?)\)\((\d+?)\)')
 DEFAULT_URL_FORMAT = '[{0}]({1})'
 
 
@@ -111,6 +114,7 @@ def parse(message, delimiters=None, url_re=None):
 
         elif url_re:
             m = url_re.match(message, pos=i)
+            e = men_re.match(message, pos=i)
             if m:
                 # Replace the whole match with only the inline URL text.
                 message = ''.join((
@@ -123,15 +127,33 @@ def parse(message, delimiters=None, url_re=None):
                 for ent in result:
                     # If the end is after our start, it is affected
                     if ent.offset + ent.length > m.start():
-                        ent.length -= delim_size
-
+                        ent.length -= delim_size 
+                            
                 result.append(MessageEntityTextUrl(
-                    offset=m.start(), length=len(m.group(1)),
-                    url=del_surrogate(m.group(2))
-                ))
+                        offset=m.start(), length=len(m.group(1)),
+                        url=del_surrogate(m.group(2))
+                    ))
                 i += len(m.group(1))
-                continue
+            if e:
+                # Replace the whole match with only the inline URL text.
+                message = ''.join((
+                    message[:e.start()],
+                    e.group(1),
+                    message[e.end():]
+                ))
 
+                delim_size = e.end() - e.start() - len(e.group())
+                for ent in result:
+                    # If the end is after our start, it is affected
+                    if ent.offset + ent.length > e.start():
+                        ent.length -= delim_size 
+
+                result.append(MessageEntityMentionName(
+                        offset=e.start(), length=len(e.group(1)),
+                        user_id=int(del_surrogate(e.group(2)))
+                    ))
+                i += len(e.group(1))
+                continue
         i += 1
 
     message = strip_text(message, result)
@@ -172,14 +194,20 @@ def unparse(text, entities, delimiters=None, url_fmt=None):
             insert_at.append((s, delimiter))
             insert_at.append((e, delimiter))
         else:
-            url = None
+            url = None 
+            mention = None
             if isinstance(entity, MessageEntityTextUrl):
                 url = entity.url
+            # elif isinstance(entity, MessageEntityMentionName):
+                # url = 'tg://user?id={}'.format(entity.user_id)
             elif isinstance(entity, MessageEntityMentionName):
-                url = 'tg://user?id={}'.format(entity.user_id)
+                mention = '{}'.format(entity.user_id)
             if url:
                 insert_at.append((s, '['))
                 insert_at.append((e, ']({})'.format(url)))
+            elif mention:
+                insert_at.append((s, '('))
+                insert_at.append((e, ')({})'.format(mention)))
 
     insert_at.sort(key=lambda t: t[0])
     while insert_at:
