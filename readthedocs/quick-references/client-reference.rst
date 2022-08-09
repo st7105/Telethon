@@ -68,6 +68,7 @@ Messages
     pin_message
     unpin_message
     send_read_acknowledge
+    send_reaction
 
 Uploads
 -------
